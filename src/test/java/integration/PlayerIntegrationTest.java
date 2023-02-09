@@ -2,6 +2,7 @@ package integration;
 
 import app.foot.FootApi;
 import app.foot.controller.rest.Player;
+import app.foot.model.UpdatePlayer;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.type.CollectionType;
@@ -18,8 +19,7 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 
 @SpringBootTest(classes = FootApi.class)
 @AutoConfigureMockMvc
@@ -31,7 +31,8 @@ class PlayerIntegrationTest {
     Player player1() {
         return Player.builder()
                 .id(1)
-                .name("J1")
+                .name("Joureur1")
+                .teamName("E1")
                 .isGuardian(false)
                 .build();
     }
@@ -39,7 +40,8 @@ class PlayerIntegrationTest {
     Player player2() {
         return Player.builder()
                 .id(2)
-                .name("J2")
+                .name("Joueur2")
+                .teamName("E2")
                 .isGuardian(false)
                 .build();
     }
@@ -47,7 +49,8 @@ class PlayerIntegrationTest {
     Player player3() {
         return Player.builder()
                 .id(3)
-                .name("J3")
+                .name("Joueur3")
+                .teamName("E2")
                 .isGuardian(false)
                 .build();
     }
@@ -61,7 +64,7 @@ class PlayerIntegrationTest {
         List<Player> actual = convertFromHttpResponse(response);
 
         assertEquals(HttpStatus.OK.value(), response.getStatus());
-        assertEquals(9, actual.size());
+        assertEquals(10, actual.size());
         assertTrue(actual.containsAll(List.of(
                 player1(),
                 player2(),
@@ -71,6 +74,7 @@ class PlayerIntegrationTest {
     @Test
     void create_players_ok() throws Exception {
         Player toCreate = Player.builder()
+                .id(10)
                 .name("Joe Doe")
                 .isGuardian(false)
                 .teamName("E1")
@@ -85,7 +89,33 @@ class PlayerIntegrationTest {
         List<Player> actual = convertFromHttpResponse(response);
 
         assertEquals(1, actual.size());
-        assertEquals(toCreate, actual.get(0).toBuilder().id(null).build());
+        assertEquals(toCreate, actual.get(0).toBuilder().build());
+    }
+
+    @Test
+    void update_players_ok() throws Exception {
+        UpdatePlayer toUpdate = UpdatePlayer.builder()
+                .id(9)
+                .name("Paul")
+                .isGuardian(false)
+                .build();
+        Player expected = Player.builder()
+                .id(9)
+                .name("Paul")
+                .isGuardian(false)
+                .teamName("E3")
+                .build();
+        MockHttpServletResponse response = mockMvc
+                .perform(put("/players")
+                        .content(objectMapper.writeValueAsString(List.of(toUpdate)))
+                        .contentType("application/json")
+                        .accept("application/json"))
+                .andReturn()
+                .getResponse();
+        List<Player> actual = convertFromHttpResponse(response);
+
+        assertEquals(1, actual.size());
+        assertEquals(expected, actual.get(0).toBuilder().build());
     }
 
     private List<Player> convertFromHttpResponse(MockHttpServletResponse response)
